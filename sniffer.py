@@ -1,14 +1,17 @@
-from scapy.all import scapy,IP,sniff,TCP, UDP, ARP, Ether
-print("welcome to ali filter")
-SHOW_TTL = input("ttl?:")
-target_ip = input("target IP:")
-target_port = input("target port:")
-target_prot= input("protocol(TCP,UDP,ARP...:)")
+from scapy.all import scapy,IP,sniff,TCP, UDP, ARP, Ether,Raw,hexdump
+from security import nullscan
+print("\033[1;32m┌──────────────────────────────────────────────────────────┐\033[0m")
+print("\033[1;32m│               === ALI FILTER ENGINE ===                  │\033[0m")
+print("\033[1;32m└──────────────────────────────────────────────────────────┘\033[0m")
+showttl = input("\033[1;32mttl?:\033[1;32m")
+target_ip = input("\033[1;32mtarget IP:\033[1;32m")
+target_port = input("\033[1;32mtarget port:\033[1;32m")
+target_prot= input("\033[1;32mprotocol(TCP,UDP,ARP...:\033[1;32m)")
 def showttl(packet):
-	if SHOW_TTL == "y":
-		return packet[IP].ttl
+	if showttl == "y":
+		return (f"TTL:{packet[IP].ttl}")
 	else:
-		pass
+		return("")
 if target_ip:
 	Y = (f"host {target_ip}")
 else:
@@ -23,6 +26,9 @@ else:
 	Z =("")
 active_rules = [rule for rule in [Z, X, Y] if rule]
 filterA = " and " .join(active_rules)
+def dump(packet):
+    if packet.haslayer(Raw):
+        hexdump(f"{packet[Raw].load}")
 def flagging(packet):
 	flag = int(packet[TCP].flags)
 	if flag == 2:
@@ -50,13 +56,14 @@ def flagging(packet):
 	elif flag == 32:
 		print(f"\033[1;31m[!] URGENT DATA POINTER (URG)\033[0m")
 def inspect(packet):
+	alert = nullscan(packet)
 	if packet.haslayer(IP):
 		srcip = packet[IP].src
 		dstip = packet[IP].dst
 		if packet.haslayer(TCP) and showttl != "y":
-			print(f"\033[1;34m[+]|{srcip}:{packet[TCP].sport}|\033[1;34m      -------->      \033[1;33m|{dstip}:{packet[TCP].dport}|TTL:{showttl(packet)}| on TCP\033[1;33m")
+			print(f"\033[1;34m[+]|{srcip}:{packet[TCP].sport}|\033[1;34m      ----{alert}\033[1;33m---->      |{dstip}:{packet[TCP].dport}|{showttl(packet)}| on TCP\033[1;33m")
 			flagging(packet)
+			dump(packet)
 		elif packet.haslayer(UDP):
 			print(f"\033[0;36m[+]|{srcip}:{packet[UDP].sport}|      -------->      |{dstip}:{packet[UDP].dport}|  on UDP\033[0;36m")
-		
 sniff(prn=inspect, store=0, iface="wlan0", count=1000000, filter=filterA)
