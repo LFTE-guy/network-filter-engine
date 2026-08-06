@@ -1,9 +1,10 @@
 from scapy.all import scapy,IP,sniff,TCP, UDP, ARP, Ether,Raw,hexdump
-from security import nullscan
+from security import *
 print("\033[1;32m┌──────────────────────────────────────────────────────────┐\033[0m")
 print("\033[1;32m│               === ALI FILTER ENGINE ===                  │\033[0m")
 print("\033[1;32m└──────────────────────────────────────────────────────────┘\033[0m")
 showttl = input("\033[1;32mttl?:\033[1;32m")
+dump = input("\033[1;32mHex dump(y/n):\033[1;32m")
 target_ip = input("\033[1;32mtarget IP:\033[1;32m")
 target_port = input("\033[1;32mtarget port:\033[1;32m")
 target_prot= input("\033[1;32mprotocol(TCP,UDP,ARP...:\033[1;32m)")
@@ -27,8 +28,9 @@ else:
 active_rules = [rule for rule in [Z, X, Y] if rule]
 filterA = " and " .join(active_rules)
 def dump(packet):
-    if packet.haslayer(Raw):
-        hexdump(f"{packet[Raw].load}")
+	if dump == "y":
+		if packet.haslayer(Raw):
+			hexdump(f"{packet[Raw].load}")
 def flagging(packet):
 	flag = int(packet[TCP].flags)
 	if flag == 2:
@@ -56,13 +58,14 @@ def flagging(packet):
 	elif flag == 32:
 		print(f"\033[1;31m[!] URGENT DATA POINTER (URG)\033[0m")
 def inspect(packet):
-	alert = nullscan(packet)
+	alert = scan(packet)
 	if packet.haslayer(IP):
 		srcip = packet[IP].src
 		dstip = packet[IP].dst
 		if packet.haslayer(TCP) and showttl != "y":
 			print(f"\033[1;34m[+]|{srcip}:{packet[TCP].sport}|\033[1;34m      ----{alert}\033[1;33m---->      |{dstip}:{packet[TCP].dport}|{showttl(packet)}| on TCP\033[1;33m")
 			flagging(packet)
+			scan(packet)
 			dump(packet)
 		elif packet.haslayer(UDP):
 			print(f"\033[0;36m[+]|{srcip}:{packet[UDP].sport}|      -------->      |{dstip}:{packet[UDP].dport}|  on UDP\033[0;36m")
