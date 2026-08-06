@@ -1,7 +1,15 @@
 from scapy.all import sniff, IP, TCP, Raw,scapy
-def nullscan(packet):
+from scapy.all import sniff, IP, TCP, Raw,scapy
+def scan(packet):
 	if packet.haslayer(TCP):
-		if int(packet[TCP].flags) == 0:
-			return  "\033[1;31malert\033[0m"
+		flags = int(packet[TCP].flags)
+		if flags == 0:
+			return  "\033[1;31mNULL SCAN ALERT\033[0m"
+		elif flags == 1:
+			return"\033[1;31m ILLEGAL FIN SCAN ALERT\033[0m"
+		elif flags == 41:
+			return"\033[1;31m XMAS SCAN ALERT\033[0m"
+		elif flags == 3:
+			return"\033[1;31m SYN-FIN SCAN ALERT\033[0m"
 		else:
-			return"\033[1;31msafe\033[0m"
+			return("Normal")
