@@ -1,18 +1,22 @@
-from scapy.all import scapy,IP,sniff,TCP, UDP, ARP, Ether,Raw,hexdump
+from scapy.all import scapy,IP,sniff,TCP, UDP, ARP, Ether,Raw,hexdump,ICMP,packet
 from security import *
+from flagging import flaggingz
+import time
 print("\033[1;32m┌──────────────────────────────────────────────────────────┐\033[0m")
 print("\033[1;32m│               === ALI FILTER ENGINE ===                  │\033[0m")
 print("\033[1;32m└──────────────────────────────────────────────────────────┘\033[0m")
-showttl = input("\033[1;32mttl?:\033[1;32m")
-dump = input("\033[1;32mHex dump(y/n):\033[1;32m")
-target_ip = input("\033[1;32mtarget IP:\033[1;32m")
-target_port = input("\033[1;32mtarget port:\033[1;32m")
-target_prot= input("\033[1;32mprotocol(TCP,UDP,ARP...:\033[1;32m)")
+ttloption = input("\033[1;32mttl?:\033[1;32m").strip().lower()
+dumpusr = input("\033[1;32mHex dump(y/n):\033[1;32m").strip().lower()
+target_ip = input("\033[1;32mtarget IP:\033[1;32m").strip().lower()
+target_port = input("\033[1;32mtarget port:\033[1;32m").strip().lower()
+target_prot= input("\033[1;32mprotocol(TCP,UDP,ARP...:\033[1;32m)").strip().lower()
+
 def showttl(packet):
-	if showttl == "y":
+	if ttloption == "y":
 		return (f"TTL:{packet[IP].ttl}")
 	else:
 		return("")
+		
 if target_ip:
 	Y = (f"host {target_ip}")
 else:
@@ -25,48 +29,48 @@ if target_prot:
 	Z =(f"{target_prot}")
 else:
 	Z =("")
+	
 active_rules = [rule for rule in [Z, X, Y] if rule]
 filterA = " and " .join(active_rules)
-def dump(packet):
-	if dump == "y":
+
+def dumpsys(packet):
+	if dumpusr == "y":
 		if packet.haslayer(Raw):
 			hexdump(f"{packet[Raw].load}")
-def flagging(packet):
-	flag = int(packet[TCP].flags)
-	if flag == 2:
-		print(f"\033[1;32m[+] NEW CONNECTION REQUEST (SYN)\033[0m")
-	elif flag == 18:
-		print(f"\033[1;35m[+] HANDSHAKE RESPONSE (SYN-ACK)\033[0m")
-	elif flag == 16:
-		print(f"\033[0;32m[+] PACKET ACKNOWLEDGED (ACK)\033[0m")
-	elif flag == 8:
-		print(f"\033[0;36m[*] DATA PUSHED TO APP (PSH)\033[0m")
-	elif flag == 24:
-		print(f"\033[1;36m[*] ACTIVE DATA STREAM (PSH-ACK)\033[0m")
-	elif flag == 1:
-		print(f"\033[1;33m[-] CONNECTION FINISHED (FIN)\033[0m")
-	elif flag == 17:
-		print(f"\033[1;33m[-] TEARDOWN ACKNOWLEDGED (FIN-ACK)\033[0m")
-	elif flag == 64:
-		print(f"\033[0;33m[!] CONGESTION NOTIFICATION (ECE)\033[0m")
-	elif flag == 128:
-		print(f"\033[0;33m[!] CONGESTION WINDOW REDUCED (CWR)\033[0m")
-	elif flag == 4:
-		print(f"\033[1;31m[!] CONNECTION RESET | ABORTED (RST)\033[0m")
-	elif flag == 20:
-		print(f"\033[1;31m[!] CONNECTION RESET ACKNOWLEDGED (RST-ACK)\033[0m")
-	elif flag == 32:
-		print(f"\033[1;31m[!] URGENT DATA POINTER (URG)\033[0m")
+			
 def inspect(packet):
-	alert = scan(packet)
 	if packet.haslayer(IP):
 		srcip = packet[IP].src
 		dstip = packet[IP].dst
-		if packet.haslayer(TCP) and showttl != "y":
-			print(f"\033[1;34m[+]|{srcip}:{packet[TCP].sport}|\033[1;34m      ----{alert}\033[1;33m---->      |{dstip}:{packet[TCP].dport}|{showttl(packet)}| on TCP\033[1;33m")
-			flagging(packet)
-			scan(packet)
-			dump(packet)
+		
+		
+		if packet.haslayer(TCP) and localip == srcip :
+			
+			flagger = flaggingz(packet)
+			alert = sys(packet)
+			
+			print(f">>>>>    \033[2;32m{srcip}:{packet[TCP].sport}\033[0m        ----[{alert}]---->      \033[1;35m{dstip}:{packet[TCP].dport}\033[0m{showttl(packet)}   {flagger}   TCP\033[1;33m")
+			
+			flaggingz(packet)
+			sys(packet)
+		elif packet.haslayer(TCP) and localip == dstip:
+			
+			flagger = flaggingz(packet)
+			alert = sys(packet)
+			
+			print(f">>>>>    \033[2;32m{dstip}:{packet[TCP].dport}\033[0m     <----[{alert}]----      \033[1;35m{srcip}:{packet[TCP].sport}\033[0m{showttl(packet)}    {flagger}    TCP\033[1;33m")
+			
+			flaggingz(packet)
+			sys(packet)
+		elif packet.haslayer(ICMP) and localip == dstip:
+			print(f"{dstip} <----ICMP---- {srcip}")
+			
+		elif packet.haslayer(ICMP) and localip == srcip:
+			print(f"{srcip} ----ICMP----> {dstip}")
+			if dumpusr == "y":
+				dumpsys(packet)
+				
 		elif packet.haslayer(UDP):
-			print(f"\033[0;36m[+]|{srcip}:{packet[UDP].sport}|      -------->      |{dstip}:{packet[UDP].dport}|  on UDP\033[0;36m")
+			print(f"\033[0;36m[+]<{srcip}:{packet[UDP].sport}>      -------->      <{dstip}:{packet[UDP].dport}>  on UDP\033[0;36m")
+
 sniff(prn=inspect, store=0, iface="wlan0", count=1000000, filter=filterA)
