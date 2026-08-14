@@ -1,4 +1,5 @@
 from scapy.all import sniff,TCP,IP
+
 def flaggingz(packet):
 	flag = int(packet[TCP].flags)
 	if flag == 2:
