@@ -14,3 +14,7 @@ FilterX is a lightweight, stateless TCP/IP packet inspection and anomaly detecti
 ## Usage
 Run with elevated privileges (required for raw socket capture):
 `sudo python3 filterx.py`
+##Disclaimer: 
+FilterX is developed strictly for network analysis, educational purposes, and defensive monitoring.
+Always ensure you have proper authorization before capturing or analyzing network traffic on any network.
+note that this is a simple project for fun and learning.
