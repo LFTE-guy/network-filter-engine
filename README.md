@@ -1,1 +1,16 @@
-a scapy based sniffer and basic security implementations for detecting nmap scans and a trap ports feature to detect any scans from the internet
+# FilterX
+
+FilterX is a lightweight, stateless TCP/IP packet inspection and anomaly detection engine written in Python. 
+
+## Features
+- **Stateless Anomaly Detection:** Flags zero-window SYN attempts, payloads on handshake packets, and invalid TCP flag states.
+- **Protocol Inspection:** Identifies non-standard protocol usage and malformed headers at line speed.
+- **Lightweight Architecture:** Low CPU overhead designed for local network monitoring.
+
+## Prerequisite
+- Python 3.x
+- Scapy (`pip install scapy`)
+
+## Usage
+Run with elevated privileges (required for raw socket capture):
+`sudo python3 filterx.py`
